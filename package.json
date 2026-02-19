@@ -1,0 +1,16 @@
+{
+  "name": "discord-ticket-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  }
+}
