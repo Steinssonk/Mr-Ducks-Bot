@@ -10,8 +10,8 @@ const client = new Client({
 });
 
 const CATEGORY_ID = '1375884023145955511';
-const STAFF_ROLE_ID = '1345648632342249564'; 
-const LOG_CHANNEL_ID = '1345510649760846056';
+const STAFF_ROLE_ID = '1474007983662039278'; 
+const LOG_CHANNEL_ID = '1474008805879713799';
 
 // Health check endpoint for Zeabur
 app.get('/', (req, res) => {
