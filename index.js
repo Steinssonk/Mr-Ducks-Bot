@@ -9,7 +9,7 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent] 
 });
 
-const CATEGORY_ID = '1375884023145955511';
+const CATEGORY_ID = '1413931822756266134';
 const STAFF_ROLE_ID = '1474007983662039278'; 
 const LOG_CHANNEL_ID = '1474008805879713799';
 
