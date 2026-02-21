@@ -72,7 +72,7 @@ app.post('/new-order', async (req, res) => {
         await channel.send({
             content: renter
                 ? `Hello <@${renter.id}>, thank you for renting! <@&${STAFF_ROLE_ID}>`
-                : `Hello **${data.discord}**, thank you for renting! <@&${STAFF_ROLE_ID}> *(renter not found in server)*`
+                : `Hello **${data.discord}**, thank you for renting! <@&${STAFF_ROLE_ID}>`
         });
 
         // ── RENTER INFO EMBED ──
@@ -110,6 +110,8 @@ app.post('/new-order', async (req, res) => {
                     .addFields(
                         { name: 'Ship Name', value: vehicleName, inline: false },
                         { name: 'Duration',  value: duration,    inline: false }
+            )
+            .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
                     );
 
                 await channel.send({ embeds: [rentalEmbed] });
