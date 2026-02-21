@@ -68,39 +68,34 @@ app.post('/new-order', async (req, res) => {
             permissionOverwrites: overwrites,
         });
 
+        // ── GREETING MESSAGE ──
+        await channel.send({
+            content: renter
+                ? `Hello <@${renter.id}>, thank you for renting! <@&${STAFF_ROLE_ID}>`
+                : `Hello **${data.discord}**, thank you for renting! <@&${STAFF_ROLE_ID}> *(renter not found in server)*`
+        });
+
         // ── RENTER INFO EMBED ──
-        const infoFields = [
-            { name: 'Roblox Username', value: data.roblox || 'N/A', inline: true },
-            { name: 'Timezone',        value: data.timezone || 'N/A', inline: true }
-        ];
-
-        // Promo code (format: "CODE" or "None")
         const promoCode = (data.promoCodes || 'None').trim();
-        if (promoCode && promoCode.toLowerCase() !== 'none') {
-            infoFields.push({ name: 'Promo Code', value: promoCode, inline: true });
-        }
-
-        // Pick-up location
-        if (data.airport && data.airport !== 'N/A') {
-            infoFields.push({ name: 'Pick-Up Location', value: data.airport, inline: false });
-        }
+        const promoDisplay = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
+        const locationDisplay = (data.airport && data.airport !== 'N/A') ? data.airport : 'N/A';
 
         const infoEmbed = new EmbedBuilder()
             .setColor(0x1d4a6b)
-            .setTitle(`⚓ New Rental Request`)
-            .setDescription(`**Renter:** ${renter ? `<@${renter.id}>` : data.discord}`)
-            .addFields(infoFields)
+            .setTitle('⚓ Rental Details')
+            .addFields(
+                { name: 'Discord Username',  value: data.discord || 'N/A',    inline: false },
+                { name: 'Roblox Username',   value: data.roblox || 'N/A',     inline: false },
+                { name: 'Timezone',          value: data.timezone || 'N/A',   inline: false },
+                { name: 'Pick-Up Location',  value: locationDisplay,           inline: false },
+                { name: 'Promo Code',        value: promoDisplay,              inline: false }
+            )
             .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
 
-        await channel.send({
-            content: renter
-                ? `Welcome <@${renter.id}>! <@&${STAFF_ROLE_ID}>`
-                : `<@&${STAFF_ROLE_ID}> — Renter not found in server`,
-            embeds: [infoEmbed]
-        });
+        await channel.send({ embeds: [infoEmbed] });
 
-        // ── MANIFEST EMBEDS ──
-        // Format per item: "Ship Name | Duration"
+        // ── PER-VEHICLE EMBEDS ──
+        // Manifest format: "Ship Name | Duration;;;Ship Name | Duration"
         if (data.manifest) {
             const items = data.manifest.split(';;;');
             for (const item of items) {
@@ -113,21 +108,22 @@ app.post('/new-order', async (req, res) => {
                     .setColor(0x1d4a6b)
                     .setTitle(`🚢 ${vehicleName}`)
                     .addFields(
-                        { name: 'Rental Duration', value: duration, inline: true }
+                        { name: 'Ship Name', value: vehicleName, inline: false },
+                        { name: 'Duration',  value: duration,    inline: false }
                     );
 
                 await channel.send({ embeds: [rentalEmbed] });
             }
         }
 
-        // ── ACTION ROW ──
+        // ── TOTAL + BUTTONS ──
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('claim').setLabel('Claim Rental').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('close').setLabel('Close Ticket').setStyle(ButtonStyle.Danger)
         );
 
         await channel.send({
-            content: `### Total Due: ${data.amount}\nOur staff will arrange your rental shortly.`,
+            content: `Total Due: ${data.amount}`,
             components: [row]
         });
 
