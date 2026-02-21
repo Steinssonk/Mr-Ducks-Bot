@@ -110,8 +110,8 @@ app.post('/new-order', async (req, res) => {
                     .addFields(
                         { name: 'Ship Name', value: vehicleName, inline: false },
                         { name: 'Duration',  value: duration,    inline: false }
-            )
-            .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
+                    )
+                    .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
                     );
 
                 await channel.send({ embeds: [rentalEmbed] });
