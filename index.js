@@ -81,7 +81,7 @@ app.post('/new-order', async (req, res) => {
         });
 
         // ── RENTER INFO EMBED ──
-        const promoCode      = (data.promo || 'None').trim();
+        const promoCode      = (data.promoCodes || 'None').trim();
         const promoDisplay   = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
         const locationDisplay = (data.airport && data.airport !== 'N/A') ? data.airport : 'N/A';
 
@@ -129,7 +129,7 @@ app.post('/new-order', async (req, res) => {
         );
 
         await channel.send({
-            content: `Total Due: ${data.total}`,
+            content: `Total Due: ${data.amount}`,
             components: [row]
         });
 
