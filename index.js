@@ -81,7 +81,7 @@ app.post('/new-order', async (req, res) => {
         });
 
         // ── RENTER INFO EMBED ──
-        const promoCode      = (data.promoCode || 'None').trim();
+        const promoCode      = (data.promo || 'None').trim();
         const promoDisplay   = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
         const locationDisplay = (data.airport && data.airport !== 'N/A') ? data.airport : 'N/A';
 
