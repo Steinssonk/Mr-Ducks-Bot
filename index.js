@@ -25,6 +25,37 @@ const LOG_CHANNEL_ID = '1474008805879713799';
 const FOOTER_TEXT    = "Tom's Totally Legitimate Rental Service";
 // ───────────────────────────────────────────────────────
 
+// ── HELPERS ────────────────────────────────────────────
+
+/**
+ * Parses a duration string and returns the return date as a formatted string.
+ * Supports formats like "3 Days", "1 Week", "2 Hours", "Permanent", etc.
+ * Falls back to "Unknown" if unparseable.
+ */
+function getReturnDate(durationStr) {
+    if (!durationStr || durationStr === 'N/A') return 'Unknown';
+
+    const lower = durationStr.toLowerCase().trim();
+
+    // Handle permanent / lifetime / unlimited
+    if (['permanent', 'lifetime', 'unlimited', 'forever'].some(k => lower.includes(k))) {
+        return 'Permanent — No return date';
+    }
+
+    const now = new Date();
+    const num = parseFloat(lower);
+
+    if (isNaN(num)) return 'Unknown';
+
+    if (lower.includes('hour'))  now.setHours(now.getHours() + num);
+    else if (lower.includes('day'))  now.setDate(now.getDate() + num);
+    else if (lower.includes('week')) now.setDate(now.getDate() + num * 7);
+    else if (lower.includes('month'))now.setMonth(now.getMonth() + num);
+    else return 'Unknown';
+
+    return now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 // Health checks
 app.get('/',       (req, res) => res.status(200).send("Tom's Rental Bot is running!"));
 app.get('/health', (req, res) => res.status(200).json({
@@ -43,9 +74,9 @@ app.post('/new-order', async (req, res) => {
         const sanitizedUser = (data.discord || 'unknown')
             .toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 15);
 
-        // Shared footer with today's date for every embed
+        // Shared footer with today's date for the info embed
         const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        const footer = { text: `${now}  •  ${FOOTER_TEXT}` };
+        const infoFooter = { text: `${now}  •  ${FOOTER_TEXT}` };
 
         // Try to find the renter in the server
         let renter = null;
@@ -81,8 +112,8 @@ app.post('/new-order', async (req, res) => {
         });
 
         // ── RENTER INFO EMBED ──
-        const promoCode      = (data.promoCodes || 'None').trim();
-        const promoDisplay   = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
+        const promoCode       = (data.promoCodes || 'None').trim();
+        const promoDisplay    = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
         const locationDisplay = (data.airport && data.airport !== 'N/A') ? data.airport : 'N/A';
 
         const infoEmbed = new EmbedBuilder()
@@ -95,7 +126,7 @@ app.post('/new-order', async (req, res) => {
                 { name: 'Pick-Up Location', value: locationDisplay,        inline: false },
                 { name: 'Promo Code',       value: promoDisplay,           inline: false }
             )
-            .setFooter(footer);
+            .setFooter(infoFooter);
 
         await channel.send({ embeds: [infoEmbed] });
 
@@ -105,9 +136,13 @@ app.post('/new-order', async (req, res) => {
             const items = data.manifest.split(';;;');
             for (const item of items) {
                 if (item.trim().length < 3) continue;
-                const parts = item.split('|').map(p => p.trim());
+                const parts       = item.split('|').map(p => p.trim());
                 const vehicleName = parts[0] || 'Unknown';
                 const duration    = parts[1] || 'N/A';
+
+                // Footer shows the calculated return date for this specific vehicle
+                const returnDate   = getReturnDate(duration);
+                const shipFooter   = { text: `Return by: ${returnDate}  •  ${FOOTER_TEXT}` };
 
                 const rentalEmbed = new EmbedBuilder()
                     .setColor(0x1d4a6b)
@@ -116,7 +151,7 @@ app.post('/new-order', async (req, res) => {
                         { name: 'Ship Name', value: vehicleName, inline: false },
                         { name: 'Duration',  value: duration,    inline: false }
                     )
-                    .setFooter(footer);
+                    .setFooter(shipFooter);
 
                 await channel.send({ embeds: [rentalEmbed] });
             }
@@ -129,7 +164,7 @@ app.post('/new-order', async (req, res) => {
         );
 
         await channel.send({
-            content: `Total Due: ${data.amount}`,
+            content: `**Total Due: ${data.amount}**\nStaff will be with you shortly.`,
             components: [row]
         });
 
@@ -162,7 +197,7 @@ client.on('interactionCreate', async i => {
         );
         await i.channel.setName(`claimed-${i.channel.name}`);
         await i.update({
-            content: `${priceLine}\n✅ Being handled by ${i.user}!`,
+            content: `${priceLine}\nStaff will be with you shortly.\n✅ Being handled by ${i.user}!`,
             components: [claimedRow]
         });
     }
