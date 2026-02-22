@@ -19,13 +19,14 @@ const client = new Client({
 });
 
 // ── CONFIG ─────────────────────────────────────────────
-const CATEGORY_ID   = '1413931822756266134';
-const STAFF_ROLE_ID = '1474007983662039278';
+const CATEGORY_ID    = '1413931822756266134';
+const STAFF_ROLE_ID  = '1474007983662039278';
 const LOG_CHANNEL_ID = '1474008805879713799';
+const FOOTER_TEXT    = "Tom's Totally Legitimate Rental Service";
 // ───────────────────────────────────────────────────────
 
 // Health checks
-app.get('/',       (req, res) => res.status(200).send('Tom\'s Rental Bot is running!'));
+app.get('/',       (req, res) => res.status(200).send("Tom's Rental Bot is running!"));
 app.get('/health', (req, res) => res.status(200).json({
     status: 'ok',
     bot: client.isReady() ? 'connected' : 'disconnected'
@@ -42,6 +43,10 @@ app.post('/new-order', async (req, res) => {
         const sanitizedUser = (data.discord || 'unknown')
             .toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 15);
 
+        // Shared footer with today's date for every embed
+        const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const footer = { text: `${now}  •  ${FOOTER_TEXT}` };
+
         // Try to find the renter in the server
         let renter = null;
         try {
@@ -51,7 +56,7 @@ app.post('/new-order', async (req, res) => {
 
         // Channel permissions
         const overwrites = [
-            { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+            { id: guild.id,      deny:  [PermissionFlagsBits.ViewChannel] },
             { id: STAFF_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
         ];
         if (renter) {
@@ -68,29 +73,29 @@ app.post('/new-order', async (req, res) => {
             permissionOverwrites: overwrites,
         });
 
-        // ── GREETING MESSAGE ──
+        // ── GREETING ──
         await channel.send({
             content: renter
                 ? `Hello <@${renter.id}>, thank you for renting! <@&${STAFF_ROLE_ID}>`
-                : `Hello **${data.discord}**, thank you for renting! <@&${STAFF_ROLE_ID}>`
+                : `Hello **${data.discord}**, thank you for renting! <@&${STAFF_ROLE_ID}> *(renter not found in server)*`
         });
 
         // ── RENTER INFO EMBED ──
-        const promoCode = (data.promoCodes || 'None').trim();
-        const promoDisplay = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
+        const promoCode      = (data.promoCodes || 'None').trim();
+        const promoDisplay   = (promoCode && promoCode.toLowerCase() !== 'none') ? promoCode : 'None';
         const locationDisplay = (data.airport && data.airport !== 'N/A') ? data.airport : 'N/A';
 
         const infoEmbed = new EmbedBuilder()
             .setColor(0x1d4a6b)
             .setTitle('⚓ Rental Details')
             .addFields(
-                { name: 'Discord Username',  value: data.discord || 'N/A',    inline: false },
-                { name: 'Roblox Username',   value: data.roblox || 'N/A',     inline: false },
-                { name: 'Timezone',          value: data.timezone || 'N/A',   inline: false },
-                { name: 'Pick-Up Location',  value: locationDisplay,           inline: false },
-                { name: 'Promo Code',        value: promoDisplay,              inline: false }
+                { name: 'Discord Username', value: data.discord  || 'N/A', inline: false },
+                { name: 'Roblox Username',  value: data.roblox   || 'N/A', inline: false },
+                { name: 'Timezone',         value: data.timezone || 'N/A', inline: false },
+                { name: 'Pick-Up Location', value: locationDisplay,        inline: false },
+                { name: 'Promo Code',       value: promoDisplay,           inline: false }
             )
-            .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
+            .setFooter(footer);
 
         await channel.send({ embeds: [infoEmbed] });
 
@@ -111,8 +116,7 @@ app.post('/new-order', async (req, res) => {
                         { name: 'Ship Name', value: vehicleName, inline: false },
                         { name: 'Duration',  value: duration,    inline: false }
                     )
-                    .setFooter({ text: `Rental ID: ${ticketId}  •  Tom's Totally Legitimate Rental Service` });
-                    );
+                    .setFooter(footer);
 
                 await channel.send({ embeds: [rentalEmbed] });
             }
@@ -125,7 +129,7 @@ app.post('/new-order', async (req, res) => {
         );
 
         await channel.send({
-            content: `Total Due: ${data.amount}`,
+            content: `Total Due: ${data.total}`,
             components: [row]
         });
 
